@@ -1,0 +1,81 @@
+# 模板 4 · 镜头配方存档（专业名：Generation Recipe，第6–7步）— 每个镜头定稿存一份
+
+> 用法：每个镜头定稿后存一份（可存为 `recipes/SH-xxx.yaml`）。它是复现、跨模型迁移、失败学习和 AI 来源披露的单位——保存的是"配方"而不是一段提示词。
+> 机制依据：`references/generation-engine.md` 第 9 节。跨镜成本汇总另用模板 5。
+
+```yaml
+# ===== 基础信息 =====
+shot: SH-___
+beat: ___
+director_intent:
+  情绪弧: ___ → ___
+  叙事功能: ___
+  关键瞬间: ___
+
+# ===== 控制决策 =====
+control_budget: L0/L1/L2/L3          # 四因子定级见模板3
+lip_sync: A+/A/B/C                   # 镜头级，非角色级
+control_map:
+  must_control:                      # HIGH 项必须有确定性信号兜底
+    身份: HIGH/MED/LOW
+    ___: HIGH/MED/LOW
+  can_drift: [___, ___]              # 显式放手、不重生
+
+strategy: t2v/i2v/first_last_frame/multi_ref/composite_startframe/v2v/proxy_guided_i2v/structure_controlled/audio_driven/inpaint/chain/split_av/post_only
+
+# ===== 输入资产（全部带版本号）=====
+inputs:
+  character_ref: [CHAR-__v_, ___]
+  costume_ref: ___
+  environment_ref: SET-__v_
+  prop_ref: ___
+  start_frame: SH___start_v__
+  end_frame: SH___end_v__
+  motion_proxy: ___                  # 白膜/简模/相机路径/粗视频/手机实拍/火柴人/pose序列
+  video_reference: ___
+  structure: ___                     # pose/depth/edge/normal
+  mask: ___
+control_signals_used: [___]          # 对照 generation-engine 第2节注册表
+continuity:
+  承接: SH-___ 的 ___（末态/动作相位/屏幕方向/持物/光声）
+  末态交接: SH-___ 的首帧
+
+# ===== Prompt（把能锁的控制拿出去后，只留这些）=====
+prompt:
+  action: "___"                      # 动作意图，一句话
+  performance: "___"                 # 克制、可观察的表演（不写抽象情绪标签）
+  atmosphere: "___"                  # 光感/质感/氛围；专业词紧跟可见结果
+  dialogue: "【角色】（语气·语速·情绪·停顿）台词"   # 无对白则删本行
+  negative: [___]                    # 只写本片真会翻车的少数项；可读中文/UI 转后期
+
+# ===== 声音 =====
+audio:
+  方式: 内嵌 / 声画分轨 / 无
+  台词气口: ___
+  环境声/音乐: ___                    # 声源、进出点、对白避让
+  画内/画外/PA: ___                  # PA 系统声不做口型
+
+# ===== 模型与参数（以当期实测为准，不写死）=====
+model:
+  route: I2V / ___
+  engine: ___（实测填）
+  version: ___
+  params_seed: ___
+
+# ===== 结果与失败史（生成过程中边做边记）=====
+result:
+  selected_take: v__
+  状态: accepted / candidate / 废弃
+failure_history:
+  v01: ___（对照缺陷码 D1–D10 或表演/运镜问题）
+  v02: ___
+repair_reroute_log:                  # 每次 Repair/Reroute 的诊断与动作
+  - "v__ → 单变量改了什么 / Repair 哪个局部 / Reroute 换了什么信号或拆链"
+review_decision: accept / repair / reroute / 回CutMap改戏
+```
+
+## Review 三分支判据（S6）
+- **ACCEPT**：不可失败项全过 → 标 accepted/candidate，进粗剪。
+- **REPAIR**：问题可隔离在局部 → Mask/脸手修复/短 V2V/后期，**不为局部缺陷重生整条**。
+- **REROUTE**：系统级失败，禁止继续堆 Prompt。先判失败来自**信号缺失 / 信号冲突 / 模型能力上限**；换信号、换方法或拆控制链（①稳定人物+简单相机 → ②运镜变换 → ③局部脸修复）。
+- 同镜 Reroute 累计到熔断阈值（普通 3 条、A+ 上限 5–6 条）仍不经济 → **回 Cut Map 改镜头设计**（并镜/换景别/换拍法/剪辑规避/删戏），这是正当导演决策。
